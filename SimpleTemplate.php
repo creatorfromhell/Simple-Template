@@ -4,7 +4,7 @@
  * Date: 1/18/15
  * Time: 10:40 PM
  * Version: 1.0
- * Last Modified: 1/20/15 at 7:21 PM
+ * Last Modified: 1/20/15 at 8:30 PM
  * Last Modified by Daniel Vidmar.
  */
  class SimpleTemplate {
@@ -39,7 +39,7 @@
 	}
 	
 	public function template($return = false, $name = null) {
-		$name = ($name == null) ? $this->template : $name;
+		$name = ($name == null) ? $this->base_path.$this->template : $name;
 		$template = "";
 		$lines = $this->parse_template($name);
 		foreach($lines as &$line) {
@@ -103,6 +103,20 @@
 		}
 		if(strpos($rule_check[0], "&") !== false && in_array(trim($rule_check[0], "&"), $special_rules)) {
 			$rule_check[0] = trim($rule_check[0], "&");
+		}
+		/*
+		 * This allows the parsing of include rules passed through the rules array without going over the nesting
+		 * limit for web servers that use xdebug.
+		 */
+		$rule_value = $this->get_rule(implode("->", $rule_check));
+		if(strpos($rule_value, "include->") !== false) {
+			$rule_value = trim($rule_value, " \t\n\r\0\x0B{}");
+			$location = explode("->", $rule_value)[1];
+			if(strpos($location, ".tpl") === false) {
+				$location = $location.".tpl";
+			}
+			$include = new SimpleTemplate($location, $this->rules, false, $this->base_path);
+			return $include->template(true);
 		}
 		return $this->get_rule(implode("->", $rule_check));
 	}
