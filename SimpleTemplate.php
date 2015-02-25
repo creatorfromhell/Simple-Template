@@ -42,19 +42,22 @@
 		$name = ($name == null) ? $this->base_path.$this->template : $name;
 		$template = "";
 		$lines = $this->parse_template($name);
-		foreach($lines as &$line) {
-			$template .= $line;
-		}
-		if($return) {
-			return $template;
-		}
-		echo $template;
+        if(is_array($lines)) {
+            foreach ($lines as &$line) {
+                $template .= $line;
+            }
+            if ($return) {
+                return $template;
+            }
+            echo $template;
+        }
+        return "";
 	}
 	
 	/*
 	 * Reads every line in a .tpl file.
 	 */
-	function read_template($name) {
+     private function read_template($name) {
 		$lines = array();
 		$file = fopen($name, 'r');
 		while(!feof($file)) {
@@ -63,7 +66,7 @@
 		return $lines;
 	}
 	
-	function parse_template($name = null) {
+	private function parse_template($name = null) {
 		$name = ($name == null) ? $this->base_path.$this->template : $this->base_path.$name;
 	
 		if(file_exists($name)) {
@@ -76,29 +79,27 @@
 		}
 		return "Failed to parse template ".$name.".";
 	}
-	
-	function filter_rules($string) {
+
+     private function filter_rules($string) {
 		$matched = array();
 		preg_match_all("/\\{([^}]+)\\}/", $string, $matched, PREG_SET_ORDER);
-		foreach($matched as &$rule) {
-			if(!empty($matched)) {
-				$string = str_replace($rule[0], $this->parse_rule(trim($rule[1], " \t\n\r\0\x0B{}")), $string);
-			}
-		}
+        if(!empty($matched)) {
+            foreach ($matched as &$rule) {
+                $string = str_replace($rule[0], $this->parse_rule(trim($rule[1], " \t\n\r\0\x0B{}")), $string);
+            }
+        }
 		return $string;
 	}
-	
-	function parse_rule($rule) {
+
+     private function parse_rule($rule) {
 		$special_rules = array("include", "function");
 		$rule_check = explode("->", $rule);
 		if(in_array($rule_check[0], $special_rules)) {
 			switch($rule_check[0]) {
 				case "include":
 					return $this->include_template($rule);
-					break;
 				case "function":
 					return $this->call_function($rule);
-					break;
 			}
 		}
 		if(strpos($rule_check[0], "&") !== false && in_array(trim($rule_check[0], "&"), $special_rules)) {
@@ -120,16 +121,16 @@
 		}
 		return $this->get_rule(implode("->", $rule_check));
 	}
-	
-	function include_template($rule) {
+
+     private function include_template($rule) {
 		$location = str_ireplace("include->", "", $rule);
 		if(strpos($location, ".tpl") === false) {
 			$location = $location.".tpl";
 		}
 		return $this->template(true, $location);
 	}
-	
-	function call_function($rule) {
+
+     private function call_function($rule) {
 		$rule_parts = explode("->", $rule);
 		if(function_exists($rule_parts[1])) {
 			$parameters = array();
@@ -140,21 +141,21 @@
 			if($value != null) {
 				return $value;
 			}
-			return;
+			return "";
 		}
 		
 		return "{ ".$rule." }";
 	}
-	
-	function get_rule($rule) {
+
+     private function get_rule($rule) {
 		$value = $this->array_path($this->rules, $rule);
 		if($value != null) {
 			return $value;
 		}
 		return "{ ".$rule." }";
 	}
-	
-	function array_path($array, $path, $delimiter = "->") {
+
+     private function array_path($array, $path, $delimiter = "->") {
 		$path_array = explode($delimiter, $path);
 		$tmp = $array;
 		
@@ -167,4 +168,3 @@
 		return $tmp;
 	}
  }
- ?>
