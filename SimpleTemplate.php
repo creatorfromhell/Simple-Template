@@ -39,19 +39,24 @@ class SimpleTemplate {
     }
     
     public function template($return = false, $name = null) {
+        $template = $this->get_lines($name);
+        if ($return) {
+            return $template;
+        }
+        echo $template;
+        return "";
+    }
+
+    private function get_lines($name) {
         $name = ($name == null) ? $this->base_path.$this->template : $name;
-        $template = "";
         $lines = $this->parse_template($name);
+        $return = "";
         if(is_array($lines)) {
             foreach ($lines as &$line) {
-                $template .= $line;
+                $return .= $line;
             }
-            if ($return) {
-                return $template;
-            }
-            echo $template;
         }
-        return "";
+        return $return;
     }
     
     /*
